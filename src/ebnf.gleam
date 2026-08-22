@@ -206,10 +206,10 @@ fn scan_while_helper(
 pub type Node {
   Terminal(String)
   NonTerminal(String)
-  Optional(List(Node))
-  Repetition(List(Node))
+  Optional(Node)
+  Repetition(Node)
   Sequence(List(Node))
-  Alternative(List(Node))
+  Alternative(Node)
 }
 
 pub type Production {
@@ -287,7 +287,7 @@ fn parse_rhs(tokens: List(Token)) -> Result(#(Node, List(Token)), ParseError) {
   use #(branches, rest2) <- result.try(parse_alternative_tail(rest, [first]))
   case branches {
     [only] -> Ok(#(only, rest2))
-    many -> Ok(#(Alternative(list.reverse(many)), rest2))
+    many -> Ok(#(Alternative(Sequence(list.reverse(many))), rest2))
   }
 }
 
@@ -339,7 +339,7 @@ fn parse_term(tokens: List(Token)) -> Result(#(Node, List(Token)), ParseError) {
     [Token(LBracket, ..), ..rest] -> {
       use #(inner, rest2) <- result.try(parse_rhs(rest))
       case rest2 {
-        [Token(RBracket, ..), ..rest3] -> Ok(#(Optional([inner]), rest3))
+        [Token(RBracket, ..), ..rest3] -> Ok(#(Optional(inner), rest3))
         [t, ..] -> Error(UnexpectedToken(t, "']'"))
         [] -> Error(UnexpectedEnd("']'"))
       }
@@ -348,7 +348,7 @@ fn parse_term(tokens: List(Token)) -> Result(#(Node, List(Token)), ParseError) {
     [Token(LBrace, ..), ..rest] -> {
       use #(inner, rest2) <- result.try(parse_rhs(rest))
       case rest2 {
-        [Token(RBrace, ..), ..rest3] -> Ok(#(Repetition([inner]), rest3))
+        [Token(RBrace, ..), ..rest3] -> Ok(#(Repetition(inner), rest3))
         [t, ..] -> Error(UnexpectedToken(t, "'}'"))
         [] -> Error(UnexpectedEnd("'}'"))
       }
@@ -476,11 +476,11 @@ fn fold_node(node: Node, acc: a, f: fn(a, Node) -> a) -> a {
   case node {
     Terminal(_) -> acc
     NonTerminal(_) -> acc
-    Optional(children)
-    | Repetition(children)
-    | Sequence(children)
-    | Alternative(children) ->
+    Optional(inner) -> fold_node(inner, acc, f)
+    Repetition(inner) -> fold_node(inner, acc, f)
+    Sequence(children) ->
       list.fold(children, acc, fn(acc, child) { fold_node(child, acc, f) })
+    Alternative(inner) -> fold_node(inner, acc, f)
   }
 }
 

@@ -19,56 +19,60 @@ pub fn sample_one_test() {
           "expression",
           Sequence([
             NonTerminal("term"),
-            Repetition([
+            Repetition(
               Sequence([
-                Alternative([Terminal("+"), Terminal("-")]),
+                Alternative(Sequence([Terminal("+"), Terminal("-")])),
                 NonTerminal("term"),
               ]),
-            ]),
+            ),
           ]),
         ),
         Production(
           "term",
           Sequence([
             NonTerminal("factor"),
-            Repetition([
+            Repetition(
               Sequence([
-                Alternative([Terminal("*"), Terminal("/")]),
+                Alternative(Sequence([Terminal("*"), Terminal("/")])),
                 NonTerminal("factor"),
               ]),
-            ]),
+            ),
           ]),
         ),
         Production(
           "factor",
-          Alternative([
-            NonTerminal("number"),
-            NonTerminal("variable"),
-            Sequence([Terminal("("), NonTerminal("expression"), Terminal(")")]),
-          ]),
+          Alternative(
+            Sequence([
+              NonTerminal("number"),
+              NonTerminal("variable"),
+              Sequence([Terminal("("), NonTerminal("expression"), Terminal(")")]),
+            ]),
+          ),
         ),
         Production(
           "variable",
-          Alternative([Terminal("x"), Terminal("y"), Terminal("z")]),
+          Alternative(Sequence([Terminal("x"), Terminal("y"), Terminal("z")])),
         ),
         Production(
           "number",
-          Sequence([NonTerminal("digit"), Repetition([NonTerminal("digit")])]),
+          Sequence([NonTerminal("digit"), Repetition(NonTerminal("digit"))]),
         ),
         Production(
           "digit",
-          Alternative([
-            Terminal("0"),
-            Terminal("1"),
-            Terminal("2"),
-            Terminal("3"),
-            Terminal("4"),
-            Terminal("5"),
-            Terminal("6"),
-            Terminal("7"),
-            Terminal("8"),
-            Terminal("9"),
-          ]),
+          Alternative(
+            Sequence([
+              Terminal("0"),
+              Terminal("1"),
+              Terminal("2"),
+              Terminal("3"),
+              Terminal("4"),
+              Terminal("5"),
+              Terminal("6"),
+              Terminal("7"),
+              Terminal("8"),
+              Terminal("9"),
+            ]),
+          ),
         ),
       ]
       should.equal(ast, res)
