@@ -83,3 +83,17 @@ pub fn sample_one_test() {
     }
   }
 }
+
+pub fn sample_two_test() {
+  let assert Ok(content) = simplifile.read("test/sample2.ebnf")
+  case ebnf.parse(content) {
+    Ok(ast) -> {
+      echo ast
+      should.fail()
+    }
+    Error(e) -> {
+      echo e
+      should.fail()
+    }
+  }
+}

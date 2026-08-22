@@ -1,0 +1,90 @@
+(* Oberon-07 grammar: *)
+
+string_literal = '"' {(letter | digit)} '"' | digit {hex_digit} "X".
+
+identifier = letter {(letter | digit)}.
+
+int_literal = digit {digit} | digit {hex_digit} "H".
+
+scale_factor = "E" ("+" | "-") digit {digit}.
+
+real_number = digit {digit} "." {digit} [scale_factor].
+
+module = module_header [import_list] [const_decls]
+         [type_decls] [variable_decls] {procedure_decl}
+         [module_body] module_footer.
+
+module_header = "MODULE" ident ";".
+
+module_footer = "END" ident ".".
+
+module_body = "BEGIN" statement {";" [statement]}.
+
+import_list = "IMPORT" import {"," import} ";".
+
+import = ident [":=" ident].
+
+const_decls = "CONST" {const_decl}.
+
+type_decls = "TYPE" {type_decl}.
+
+variable_decls = "VAR" {variable_decl}.
+
+const_decl = ident_def "=" const_expression ";".
+
+const_expression = expression.
+
+type_decl = ident_def "=" type ";".
+
+type = base_type | struct_type.
+
+base_type = qualident.
+
+struct_type = array_type | record_type | pointer_type | procedure_type.
+
+array_type = "ARRAY" length {"," length} "OF" type.
+
+length = const_expression.
+
+record_type = "RECORD" ["(" base_type ")"] [field_list_seq] [";"] "END".
+
+base_type = qualident.
+
+field_list_seq = field_list {";" field_list}.
+
+field_list = ident_list ":" type.
+
+ident_list = ident_def {"," ident_def}.
+
+pointer_type = "POINTER" "TO" type.
+
+procedure_type = "PROCEDURE" [formal_params].
+
+formal_params = "(" [fp_section {";" fp_section}] ")" [":" qualident].
+
+fp_section = ["VAR"] ident {"," ident} ":" formal_type.
+
+formal_type = {"ARRAY" "OF"} qualident.
+
+qualident = [ident "."] ident.
+
+ident_def = ident ["*" | "-"].
+
+variable_decl = ident_list ":" type.
+
+procedure_decl = procedure_heading ";" procedure_body ident ";".
+
+procedure_heading = "PROCEDURE" ident_def [formal_params].
+
+(* TODO: *)
+procedure_body = .
+
+digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" .
+
+lowercase = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" |
+"k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" |
+"v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" |
+"G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" |
+"R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" .
+
+hex_digit = (digit | "A" | "B" | "C" | "D" | "E" | "F").
