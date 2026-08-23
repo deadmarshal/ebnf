@@ -1,5 +1,6 @@
 import ebnf.{
   Alternative, NonTerminal, Production, Repetition, Sequence, Terminal,
+  UnexpectedEnd,
 }
 
 import gleeunit
@@ -12,8 +13,10 @@ pub fn main() -> Nil {
 
 pub fn sample_empty_test() {
   let s = ""
-  let ast = ebnf.parse(s)
-  echo ast
+  case ebnf.parse(s) {
+    Ok(_) -> should.fail()
+    Error(e) -> should.equal(e, UnexpectedEnd("nonterminal"))
+  }
 }
 
 pub fn sample_one_test() {
@@ -89,8 +92,7 @@ pub fn sample_one_test() {
       ]
       should.equal(ast, res)
     }
-    Error(e) -> {
-      echo ebnf.to_string(e)
+    Error(_e) -> {
       should.fail()
     }
   }
