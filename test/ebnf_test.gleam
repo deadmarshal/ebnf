@@ -26,6 +26,7 @@ pub fn sample_one_test() {
               ]),
             ),
           ]),
+          True,
         ),
         Production(
           "term",
@@ -38,6 +39,7 @@ pub fn sample_one_test() {
               ]),
             ),
           ]),
+          False,
         ),
         Production(
           "factor",
@@ -48,14 +50,17 @@ pub fn sample_one_test() {
               Sequence([Terminal("("), NonTerminal("expression"), Terminal(")")]),
             ]),
           ),
+          False,
         ),
         Production(
           "variable",
           Alternative(Sequence([Terminal("x"), Terminal("y"), Terminal("z")])),
+          False,
         ),
         Production(
           "number",
           Sequence([NonTerminal("digit"), Repetition(NonTerminal("digit"))]),
+          False,
         ),
         Production(
           "digit",
@@ -73,6 +78,7 @@ pub fn sample_one_test() {
               Terminal("9"),
             ]),
           ),
+          False,
         ),
       ]
       should.equal(ast, res)
@@ -83,17 +89,16 @@ pub fn sample_one_test() {
     }
   }
 }
-
-pub fn sample_two_test() {
-  let assert Ok(content) = simplifile.read("test/sample2.ebnf")
-  case ebnf.parse(content) {
-    Ok(ast) -> {
-      echo ast
-      should.fail()
-    }
-    Error(e) -> {
-      echo e
-      should.fail()
-    }
-  }
-}
+// pub fn sample_two_test() {
+//   let assert Ok(content) = simplifile.read("test/sample2.ebnf")
+//   case ebnf.parse(content) {
+//     Ok(ast) -> {
+//       echo ast
+//       should.fail()
+//     }
+//     Error(e) -> {
+//       echo e
+//       should.fail()
+//     }
+//   }
+// }

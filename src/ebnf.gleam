@@ -1,9 +1,8 @@
-import gleam/dict
+import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
-import gleam/option
 import gleam/result
-import gleam/set
+import gleam/set.{type Set}
 import gleam/string
 
 // ============================================================================
@@ -213,7 +212,7 @@ pub type Node {
 }
 
 pub type Production {
-  Production(lhs: String, rhs: Node)
+  Production(lhs: String, rhs: Node, is_start: Bool)
 }
 
 pub type Ebnf =
@@ -259,7 +258,13 @@ fn parse_productions(
     [Token(Eof, ..), ..] -> Ok(#(acc, tokens))
     _ -> {
       use #(prod, rest) <- result.try(parse_production(tokens))
-      parse_productions(rest, [prod, ..acc])
+      case list.is_empty(acc) {
+        True -> {
+          let prod = Production(..prod, is_start: True)
+          parse_productions(rest, [prod, ..acc])
+        }
+        False -> parse_productions(rest, [prod, ..acc])
+      }
     }
   }
 }
@@ -271,7 +276,7 @@ fn parse_production(
     [Token(SNonTerminal(name), ..), Token(Equal, ..), ..rest] -> {
       use #(rhs, rest2) <- result.try(parse_rhs(rest))
       case rest2 {
-        [Token(Dot, ..), ..rest3] -> Ok(#(Production(name, rhs), rest3))
+        [Token(Dot, ..), ..rest3] -> Ok(#(Production(name, rhs, False), rest3))
         [t, ..] -> Error(UnexpectedToken(t, "'.'"))
         [] -> Error(UnexpectedEnd("'.'"))
       }
@@ -391,18 +396,58 @@ fn analyze_duplicates(ebnf: Ebnf) -> Result(Nil, ParseError) {
 
 /// analyzes unused productions in the grammar.
 fn analyze_unused_productions(ebnf: Ebnf) -> Result(Nil, ParseError) {
-  let lhs_dict = list.map(ebnf, fn(prod) { #(prod.lhs, 0) }) |> dict.from_list
-  let d = count_usages(ebnf, lhs_dict)
+  let index = build_index(ebnf)
+
+  let start_names =
+    ebnf |> list.filter(fn(p) { p.is_start }) |> list.map(fn(p) { p.lhs })
+
+  let visited =
+    start_names |> list.fold(set.new(), fn(acc, name) { dfs(name, index, acc) })
+
   let unused_prods =
-    dict.fold(d, [], fn(acc, k, v) {
-      case v {
-        0 -> [k, ..acc]
-        _ -> acc
-      }
-    })
+    ebnf |> list.filter(fn(p) { !set.contains(visited, p.lhs) })
+
   case list.is_empty(unused_prods) {
     True -> Ok(Nil)
-    False -> Error(UnusedProductions(unused_prods))
+    False -> {
+      Error(UnusedProductions(unused_prods |> list.map(fn(p) { p.lhs })))
+    }
+  }
+}
+
+fn build_index(ebnf: Ebnf) -> Dict(String, Node) {
+  list.fold(ebnf, dict.new(), fn(acc, p) { dict.insert(acc, p.lhs, p.rhs) })
+}
+
+fn dfs(
+  name: String,
+  index: Dict(String, Node),
+  visited: Set(String),
+) -> Set(String) {
+  case set.contains(visited, name) {
+    True -> visited
+    False -> {
+      let visited = set.insert(visited, name)
+      case dict.get(index, name) {
+        Ok(rhs) -> visit_node(rhs, index, visited)
+        Error(_) -> visited
+      }
+    }
+  }
+}
+
+fn visit_node(
+  node: Node,
+  index: Dict(String, Node),
+  visited: Set(String),
+) -> Set(String) {
+  case node {
+    Terminal(_) -> visited
+    NonTerminal(name) -> dfs(name, index, visited)
+    Optional(n) | Repetition(n) | Alternative(n) ->
+      visit_node(n, index, visited)
+    Sequence(nodes) ->
+      list.fold(nodes, visited, fn(acc, n) { visit_node(n, index, acc) })
   }
 }
 
@@ -434,7 +479,7 @@ fn analyze_undefined_productions(ebnf: Ebnf) -> Result(Nil, ParseError) {
 
 /// find duplicate productions in an Ebnf.
 fn find_duplicates(xs: Ebnf) -> List(String) {
-  let #(duplicates_rev, _seen) =
+  let #(duplicates, _seen) =
     list.fold(xs, #([], set.new()), fn(acc, item) {
       let #(dups, seen) = acc
       case set.contains(seen, item.lhs) {
@@ -442,32 +487,7 @@ fn find_duplicates(xs: Ebnf) -> List(String) {
         False -> #(dups, set.insert(seen, item.lhs))
       }
     })
-  duplicates_rev |> list.reverse
-}
-
-/// counts the usages of a NonTerminal, if the count is 0,
-/// the NonTerminal is unused.
-fn count_usages(
-  ebnf: Ebnf,
-  d: dict.Dict(String, Int),
-) -> dict.Dict(String, Int) {
-  let non_terms =
-    list.flat_map(ebnf, fn(prod) {
-      fold_node(prod.rhs, [], fn(acc, node) {
-        case node {
-          NonTerminal(s) -> [s, ..acc]
-          _ -> list.reverse(acc)
-        }
-      })
-    })
-  list.fold(non_terms, d, fn(acc, e) {
-    dict.upsert(acc, e, fn(v) {
-      case v {
-        option.Some(i) -> i + 1
-        option.None -> 0
-      }
-    })
-  })
+  duplicates |> list.reverse
 }
 
 /// Folds over a Node type.
