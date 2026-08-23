@@ -1,5 +1,5 @@
+import gleam/bool
 import gleam/dict.{type Dict}
-import gleam/int
 import gleam/list
 import gleam/result
 import gleam/set.{type Set}
@@ -237,6 +237,11 @@ pub type ParseError {
 // Parses a string into an Ebnf type
 pub fn parse(s: String) -> Result(Ebnf, ParseError) {
   use tokens <- result.try(scan(s))
+  // TODO: Isn't tokens a List(Token) inside the callback func?
+  // then why would I need to wrap it in Ok here?
+  let assert Ok(Token(kind, ..)) = list.first(tokens)
+  use <- bool.guard(kind == Eof, Error(UnexpectedEnd("nonterminal")))
+
   use #(productions, rest) <- result.try(parse_productions(tokens, []))
   case rest {
     [] -> Error(UnexpectedEnd("nonterminal"))
@@ -566,58 +571,4 @@ fn is_letter(c: String) -> Bool {
 /// Checks if a character is valid in an identifier.
 fn is_ident_char(c: String) -> Bool {
   is_letter(c) || c == "_"
-}
-
-pub fn to_string(err: ParseError) -> String {
-  case err {
-    UnterminatedTerminal(pos:) ->
-      "UnterminatedTerminal(pos: " <> pos_to_string(pos) <> ")"
-    UnterminatedComment(pos:) ->
-      "UnterminatedComment(pos: " <> pos_to_string(pos) <> ")"
-    EmptyTerminal(pos:) -> "EmptyTerminal(pos: " <> pos_to_string(pos) <> ")"
-    UnexpectedCharacter(c:, pos:) ->
-      "UnexpectedCharacter(c: " <> c <> ", pos: " <> pos_to_string(pos) <> ")"
-    UnexpectedToken(token:, expected:) ->
-      "UnexpectedToken(token: "
-      <> token_to_string(token)
-      <> ", expected: "
-      <> expected
-    UnexpectedEnd(expected:) -> "UnexpectedEnd(expected: " <> expected <> ")"
-    DuplicateProductions(prods:) ->
-      "DuplicateProductions(" <> string.join(prods, ", ") <> ")"
-    UnusedProductions(prods:) ->
-      "UnusedProductions(" <> string.join(prods, ", ") <> ")"
-    UndefinedProductions(prods:) ->
-      "UndefinedProductions(" <> string.join(prods, ", ") <> ")"
-  }
-}
-
-fn pos_to_string(pos: Position) -> String {
-  "Position(row: "
-  <> int.to_string(pos.row)
-  <> ",col: "
-  <> int.to_string(pos.col)
-  <> ")"
-}
-
-fn token_to_string(token: Token) -> String {
-  case token {
-    Token(kind, pos) -> {
-      case kind {
-        Eof -> "Eof(" <> pos_to_string(pos) <> ")"
-        LParen -> "LParen(" <> pos_to_string(pos) <> ")"
-        RParen -> "RParen(" <> pos_to_string(pos) <> ")"
-        LBracket -> "LBracket(" <> pos_to_string(pos) <> ")"
-        RBracket -> "RBracket(" <> pos_to_string(pos) <> ")"
-        LBrace -> "LBrace(" <> pos_to_string(pos) <> ")"
-        RBrace -> "RBrace(" <> pos_to_string(pos) <> ")"
-        Dot -> "Dot(" <> pos_to_string(pos) <> ")"
-        Bar -> "Bar(" <> pos_to_string(pos) <> ")"
-        Equal -> "Equal(" <> pos_to_string(pos) <> ")"
-        STerminal(s) -> "STerminal(" <> s <> ", " <> pos_to_string(pos) <> ")"
-        SNonTerminal(s) ->
-          "SNonTerminal(" <> s <> ", " <> pos_to_string(pos) <> ")"
-      }
-    }
-  }
 }

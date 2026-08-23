@@ -10,6 +10,12 @@ pub fn main() -> Nil {
   gleeunit.main()
 }
 
+pub fn sample_empty_test() {
+  let s = ""
+  let ast = ebnf.parse(s)
+  echo ast
+}
+
 pub fn sample_one_test() {
   let assert Ok(content) = simplifile.read("test/sample1.ebnf")
   case ebnf.parse(content) {
