@@ -3,11 +3,18 @@ version = "1.0.0"
 
 description = "ISO 14977 EBNF parser."
 licences = ["Unlicense"]
-repository = { type = "github", user = "deadmarshal", repo = "https://github.com/deadmarshal/ebnf" }
+
+repository = { type = "github", user = "deadmarshal", repo = "ebnf" }
+
+links = [
+  { title = "Website", href = "https://deadmarshal.blogspot.com" },
+  { title = "Sponsor", href = "https://github.com/sponsors/deadmarshal" },
+]
 
 [dependencies]
 gleam_stdlib = ">= 1.0.0 and < 2.0.0"
-simplifile = ">= 2.7.0 and < 3.0.0"
 
 [dev_dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
+simplifile = ">= 2.7.0 and < 3.0.0"
+
