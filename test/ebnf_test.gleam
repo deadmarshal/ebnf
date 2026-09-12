@@ -71,19 +71,18 @@ pub fn sample_one_test() {
         ),
         Production(
           "digit",
-          Alternative(
-            [
-              Terminal("0"),
-              Terminal("1"),
-              Terminal("2"),
-              Terminal("3"),
-              Terminal("4"),
-              Terminal("5"),
-              Terminal("6"),
-              Terminal("7"),
-              Terminal("8"),
-              Terminal("9"),
-            ]),
+          Alternative([
+            Terminal("0"),
+            Terminal("1"),
+            Terminal("2"),
+            Terminal("3"),
+            Terminal("4"),
+            Terminal("5"),
+            Terminal("6"),
+            Terminal("7"),
+            Terminal("8"),
+            Terminal("9"),
+          ]),
           False,
         ),
       ]
@@ -94,16 +93,17 @@ pub fn sample_one_test() {
     }
   }
 }
-// pub fn sample_two_test() {
-//   let assert Ok(content) = simplifile.read("test/sample2.ebnf")
-//   case ebnf.parse(content) {
-//     Ok(ast) -> {
-//       echo ast
-//       should.fail()
-//     }
-//     Error(e) -> {
-//       echo e
-//       should.fail()
-//     }
-//   }
-// }
+
+pub fn sample_two_test() {
+  let assert Ok(content) = simplifile.read("test/sample2.ebnf")
+  case ebnf.parse(content) {
+    Ok(ast) -> {
+      echo ast
+      should.fail()
+    }
+    Error(e) -> {
+      echo e
+      should.fail()
+    }
+  }
+}

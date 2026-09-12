@@ -1,90 +1,183 @@
-(* Oberon-07 grammar: *)
-
-string_literal = '"' {(letter | digit)} '"' | digit {hex_digit} "X".
-
-identifier = letter {(letter | digit)}.
-
-int_literal = digit {digit} | digit {hex_digit} "H".
-
-scale_factor = "E" ("+" | "-") digit {digit}.
-
-real_number = digit {digit} "." {digit} [scale_factor].
-
-module = module_header [import_list] [const_decls]
-         [type_decls] [variable_decls] {procedure_decl}
-         [module_body] module_footer.
-
-module_header = "MODULE" ident ";".
-
-module_footer = "END" ident ".".
-
-module_body = "BEGIN" statement {";" [statement]}.
-
-import_list = "IMPORT" import {"," import} ";".
-
-import = ident [":=" ident].
-
-const_decls = "CONST" {const_decl}.
-
-type_decls = "TYPE" {type_decl}.
-
-variable_decls = "VAR" {variable_decl}.
-
-const_decl = ident_def "=" const_expression ";".
-
-const_expression = expression.
-
-type_decl = ident_def "=" type ";".
-
-type = base_type | struct_type.
-
-base_type = qualident.
-
-struct_type = array_type | record_type | pointer_type | procedure_type.
-
-array_type = "ARRAY" length {"," length} "OF" type.
-
-length = const_expression.
-
-record_type = "RECORD" ["(" base_type ")"] [field_list_seq] [";"] "END".
-
-base_type = qualident.
-
-field_list_seq = field_list {";" field_list}.
-
-field_list = ident_list ":" type.
-
-ident_list = ident_def {"," ident_def}.
-
-pointer_type = "POINTER" "TO" type.
-
-procedure_type = "PROCEDURE" [formal_params].
-
-formal_params = "(" [fp_section {";" fp_section}] ")" [":" qualident].
-
-fp_section = ["VAR"] ident {"," ident} ":" formal_type.
-
-formal_type = {"ARRAY" "OF"} qualident.
-
-qualident = [ident "."] ident.
-
-ident_def = ident ["*" | "-"].
-
-variable_decl = ident_list ":" type.
-
-procedure_decl = procedure_heading ";" procedure_body ident ";".
-
-procedure_heading = "PROCEDURE" ident_def [formal_params].
-
-(* TODO: *)
-procedure_body = .
+(*
+  Oberon-2 grammar:
+  https://github.com/pjmlp/Oberon-2-FrontendTools
+*)
 
 digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" .
 
-lowercase = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" |
-"k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" |
-"v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" |
-"G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" |
-"R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" .
+digits = digit {digit} .
 
-hex_digit = (digit | "A" | "B" | "C" | "D" | "E" | "F").
+hexDigit = digit | "A" | "B" | "C" | "D" | "E" | "F" .
+
+hexDigits = hexDigit {hexDigit} .
+
+letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" |
+         "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" |
+         "U" | "V" | "W" | "X" | "Y" | "Z" |
+         "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" |
+         "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" |
+         "u" | "v" | "w" | "x" | "y" | "z" .
+
+INTCONST = digits | digit hexDigits "H" .
+CHARCONST = digit hexDigits "X" .
+STRCONST = '"' {letter | digit} '"' .
+REALCONST = digits "." {digit} "E" [exponent_part] .
+LREALCONST = digits "." {digit} "D" [exponent_part] .
+exponent_part = ["+" | "-"] digits .
+
+(* Parser rules: *)
+module = "MODULE" ident ";" importList declSeq beginBlock "END" ident "." .
+
+importList = ["IMPORT" modList ";"] .
+
+modName = ident | ident ":=" ident .
+
+modList = modName | modList "," modName .
+
+beginBlock = ["BEGIN" statementSeq] .
+
+ident = letter {letter}.
+
+identList = identDef | identList "," identDef .
+
+qualident = ident | ident "." ident .
+
+designator = qualident
+             | designator "." ident
+             | designator "[" exprList "]"
+             | designator "^"
+             | designator "(" qualident ")" .
+
+identDef = ident | ident "*" | ident "-" .
+
+(* declarations *)
+declSeq =  declSeqList procDecls .
+
+declSeqList = [declSeqList "CONST" constDeclList]
+            | [declSeqList "TYPE" typeDeclList]
+            | [declSeqList "VAR" varDeclList] .
+
+constDeclList = [identDef "=" constExpr]
+              | [constDeclList ";" identDef "=" constExpr] .
+
+typeDeclList = [identDef "=" type]
+             | [typeDeclList ";" identDef "=" type] .
+
+varDeclList = [identList ":" type]
+            | [varDeclList ";" identList "=" type] .
+
+procDecls = [procDecls procDecl ";"]
+          | [procDecls forwardDecl] .
+
+procDecl = "PROCEDURE" receiver identDef formalPars ";" declSeq beginBlock "END" ident .
+
+forwardDecl = "PROCEDURE" "^" receiver identDef formalPars ";" .
+
+receiver = ["(" byReference ident ":" ident ")"] .
+
+formalPars = "(" fpSectionList ")" retType .
+
+retType = [":" qualident] .
+
+fpSectionList = byReference identList ":" type .
+
+byReference = ["VAR"] .
+
+(* type declarations *)
+type = qualident
+      | "ARRAY" constExprList "OF" type
+      | "RECORD" baseRec fieldList "END"
+      | "POINTER" "TO" type
+      | "PROCEDURE" formalPars .
+
+constExprList = constExpr
+            | constExprList "," constExpr .
+
+baseRec = ["(" qualident ")"] .
+
+fieldList = [identList ":" type]
+          | [fieldList ";" identList ":" type] .
+
+(* statements *)
+statementSeq = statement
+             | statementSeq ";" statement .
+
+statement = designator ":=" expr
+          | designator params
+	        | "IF" expr "THEN" statementSeq elsifList elsePart "END"
+	        | "CASE" expr "OF" caseList elsePart "END"
+	        | "WHILE" expr "DO" statementSeq "END"
+					| "REPEAT" statementSeq "UNTIL" expr
+	        | "FOR" ident ":=" expr "TO" expr byStep "DO" statementSeq "END"
+	        | "LOOP" statementSeq "END"
+	        | "WITH" guardList elsePart "END"
+	        | "EXIT"
+	        | "RETURN" exprOpt .
+
+params = ["(" exprList ")"] .
+
+elsifList = [elsifList "ELSIF" expr "THEN" statementSeq] .
+
+elsePart = ["ELSE" statementSeq] .
+
+caseList = [caseLabelsList ":" statementSeq] .
+
+caseLabelsList = caseLabels
+               | caseLabelsList "," caseLabels .
+
+caseLabels = constExpr
+           | constExpr ".." constExpr .
+
+byStep = ["BY" constExpr] .
+
+guardList = guard "DO" statementSeq
+          | guardList "|" guard "DO" statementSeq .
+
+guard = qualident ":" qualident .
+
+exprOpt = [expr] .
+
+(* expressions *)
+constExpr = expr .
+
+expr = simpleExpr
+     | simpleExpr "=" simpleExpr
+     | simpleExpr "#" simpleExpr
+     | simpleExpr "<" simpleExpr
+     | simpleExpr "<="  simpleExpr
+     | simpleExpr ">" simpleExpr
+     | simpleExpr ">=" simpleExpr
+     | simpleExpr "IN" simpleExpr
+     | simpleExpr "IS" simpleExpr .
+
+simpleExpr = simpleExpr "+" simpleExpr
+           | simpleExpr "-" simpleExpr
+           | simpleExpr "*" simpleExpr
+           | simpleExpr "/" simpleExpr
+           | simpleExpr "DIV" simpleExpr
+           | simpleExpr "MOD" simpleExpr
+           | simpleExpr "OR"  simpleExpr
+           | simpleExpr "&" simpleExpr
+           | "(" simpleExpr ")"
+	         | designator params
+	         | number
+	         | CHARCONST
+	         | STRCONST
+	         | "NIL"
+	         | Set
+	         | "~" simpleExpr .
+
+number = INTCONST
+       | REALCONST
+       | LREALCONST .
+
+exprList = expr
+         | exprList "," expr .
+
+Set = "{" elementList "}" .
+
+elementList = [element]
+            | [elementList "," element] .
+
+element = expr
+        | expr ".." expr .
