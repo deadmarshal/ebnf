@@ -208,7 +208,7 @@ pub type Node {
   Optional(Node)
   Repetition(Node)
   Sequence(List(Node))
-  Alternative(Node)
+  Alternative(List(Node))
 }
 
 pub type Production {
@@ -297,7 +297,7 @@ fn parse_rhs(tokens: List(Token)) -> Result(#(Node, List(Token)), ParseError) {
   use #(branches, rest2) <- result.try(parse_alternative_tail(rest, [first]))
   case branches {
     [only] -> Ok(#(only, rest2))
-    many -> Ok(#(Alternative(Sequence(list.reverse(many))), rest2))
+    many -> Ok(#(Alternative(list.reverse(many)), rest2))
   }
 }
 
@@ -449,8 +449,9 @@ fn visit_node(
   case node {
     Terminal(_) -> visited
     NonTerminal(name) -> dfs(name, index, visited)
-    Optional(n) | Repetition(n) | Alternative(n) ->
-      visit_node(n, index, visited)
+    Optional(n) | Repetition(n) -> visit_node(n, index, visited)
+    Alternative(nodes) ->
+      list.fold(nodes, visited, fn(acc, n) { visit_node(n, index, acc) })
     Sequence(nodes) ->
       list.fold(nodes, visited, fn(acc, n) { visit_node(n, index, acc) })
   }
@@ -503,9 +504,8 @@ fn fold_node(node: Node, acc: a, f: fn(a, Node) -> a) -> a {
     NonTerminal(_) -> acc
     Optional(inner) -> fold_node(inner, acc, f)
     Repetition(inner) -> fold_node(inner, acc, f)
-    Sequence(children) ->
+    Sequence(children) | Alternative(children) ->
       list.fold(children, acc, fn(acc, child) { fold_node(child, acc, f) })
-    Alternative(inner) -> fold_node(inner, acc, f)
   }
 }
 

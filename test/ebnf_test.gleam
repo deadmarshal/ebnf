@@ -30,7 +30,7 @@ pub fn sample_one_test() {
             NonTerminal("term"),
             Repetition(
               Sequence([
-                Alternative(Sequence([Terminal("+"), Terminal("-")])),
+                Alternative([Terminal("+"), Terminal("-")]),
                 NonTerminal("term"),
               ]),
             ),
@@ -43,7 +43,7 @@ pub fn sample_one_test() {
             NonTerminal("factor"),
             Repetition(
               Sequence([
-                Alternative(Sequence([Terminal("*"), Terminal("/")])),
+                Alternative([Terminal("*"), Terminal("/")]),
                 NonTerminal("factor"),
               ]),
             ),
@@ -52,18 +52,16 @@ pub fn sample_one_test() {
         ),
         Production(
           "factor",
-          Alternative(
-            Sequence([
-              NonTerminal("number"),
-              NonTerminal("variable"),
-              Sequence([Terminal("("), NonTerminal("expression"), Terminal(")")]),
-            ]),
-          ),
+          Alternative([
+            NonTerminal("number"),
+            NonTerminal("variable"),
+            Sequence([Terminal("("), NonTerminal("expression"), Terminal(")")]),
+          ]),
           False,
         ),
         Production(
           "variable",
-          Alternative(Sequence([Terminal("x"), Terminal("y"), Terminal("z")])),
+          Alternative([Terminal("x"), Terminal("y"), Terminal("z")]),
           False,
         ),
         Production(
@@ -74,7 +72,7 @@ pub fn sample_one_test() {
         Production(
           "digit",
           Alternative(
-            Sequence([
+            [
               Terminal("0"),
               Terminal("1"),
               Terminal("2"),
@@ -86,7 +84,6 @@ pub fn sample_one_test() {
               Terminal("8"),
               Terminal("9"),
             ]),
-          ),
           False,
         ),
       ]
