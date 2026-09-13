@@ -3,28 +3,6 @@
   https://github.com/pjmlp/Oberon-2-FrontendTools
 *)
 
-digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" .
-
-digits = digit {digit} .
-
-hexDigit = digit | "A" | "B" | "C" | "D" | "E" | "F" .
-
-hexDigits = hexDigit {hexDigit} .
-
-letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" |
-         "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" |
-         "U" | "V" | "W" | "X" | "Y" | "Z" |
-         "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" |
-         "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" |
-         "u" | "v" | "w" | "x" | "y" | "z" .
-
-INTCONST = digits | digit hexDigits "H" .
-CHARCONST = digit hexDigits "X" .
-STRCONST = '"' {letter | digit} '"' .
-REALCONST = digits "." {digit} "E" [exponent_part] .
-LREALCONST = digits "." {digit} "D" [exponent_part] .
-exponent_part = ["+" | "-"] digits .
-
 (* Parser rules: *)
 module = "MODULE" ident ";" importList declSeq beginBlock "END" ident "." .
 
@@ -181,3 +159,28 @@ elementList = [element]
 
 element = expr
         | expr ".." expr .
+
+(* Scanner rules: *)
+
+digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" .
+
+digits = digit {digit} .
+
+hexDigit = digit | "A" | "B" | "C" | "D" | "E" | "F" .
+
+hexDigits = hexDigit {hexDigit} .
+
+letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" |
+         "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" |
+         "U" | "V" | "W" | "X" | "Y" | "Z" |
+         "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" |
+         "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" |
+         "u" | "v" | "w" | "x" | "y" | "z" .
+
+INTCONST = digits | digit hexDigits "H" .
+CHARCONST = digit hexDigits "X" .
+STRCONST = '"' {letter | digit} '"' .
+REALCONST = digits "." {digit} "E" [exponent_part] .
+LREALCONST = digits "." {digit} "D" [exponent_part] .
+exponent_part = ["+" | "-"] digits .
+
